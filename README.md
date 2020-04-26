@@ -16,6 +16,10 @@ Bencode (pronounced like B-encode) is the encoding used by the peer-to-peer file
 
 An esoteric programming language created in 1993 by Urban Müller, and is notable for its extreme minimalism.
 
+## [Huffman coding](huffman-code)
+
+In computer science and information theory, a Huffman code is a particular type of optimal prefix code that is commonly used for lossless data compression.
+
 ## In progress
 
 ## [BitTorrent](torrent)
@@ -25,21 +29,25 @@ BitTorrent is a communication protocol for peer-to-peer file sharing (P2P) which
 - [x] Torrent file processing
 - [ ] Tracker server
 - [ ] Tracker communication
+  - [ ] http/https
+  - [ ] udp
 - [ ] Downloader
 
 ### [png](png)
 
+- [x] File parser
+  - [x] Extract chunks
+  - [ ] Checksum (optional)
+    - [ ] CRC-32
 - [x] Header parser
 - [x] Palette parser
 - [ ] Decompress data
+  - [ ] Deflate
+    - [x] Huffman encoding
 - [ ] Interlace support
 - [ ] Filter support
-- [ ] Dependencies
-  - [ ] Deflate (used for png)
-    - [ ] Huffman encoding (used for deflate)
-  - [ ] CRC-32 (used for png)
 
-## TODO plan
+## TODO plan/ideas
 
 - [ ] sha1
 - [ ] sha256
