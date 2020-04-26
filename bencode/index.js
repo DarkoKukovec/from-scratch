@@ -1,3 +1,5 @@
+const { byteArrayToString } = require('../helpers');
+
 function decode(buffer) {
   const bin = buffer instanceof Buffer ? Array.from(buffer) : buffer;
   const next = String.fromCharCode(bin[0]);
@@ -10,7 +12,7 @@ function decode(buffer) {
     // Number
     const endIndex = bin.indexOf('e'.charCodeAt(0));
     const section = bin.splice(0, endIndex + 1);
-    return parseInt(String.fromCharCode(...section.slice(1, -1)), 10);
+    return parseInt(byteArrayToString(section.slice(1, -1)), 10);
   } else if (next === 'l') {
     // List
     bin.splice(0, 1);
@@ -30,7 +32,7 @@ function decode(buffer) {
     for (;;) {
       const key = decode(bin);
       if (key) {
-        data[String.fromCharCode(...key)] = decode(bin);
+        data[byteArrayToString(key)] = decode(bin);
       } else {
         return data;
       }
@@ -38,7 +40,7 @@ function decode(buffer) {
   } else if (!isNaN(parseInt(next, 10))) {
     // Byte string
     const separator = bin.indexOf(':'.charCodeAt(0));
-    const length = parseInt(String.fromCharCode(...bin.splice(0, separator + 1)), 10);
+    const length = parseInt(byteArrayToString(bin.splice(0, separator + 1)), 10);
     return bin.splice(0, length);
   }
 }
