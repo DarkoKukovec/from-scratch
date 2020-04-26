@@ -12,28 +12,35 @@ Befunge is a stack-based, reflective, esoteric programming language. It differs 
 
 Bencode (pronounced like B-encode) is the encoding used by the peer-to-peer file sharing system BitTorrent for storing and transmitting loosely structured data.
 
-## [BitTorrent](torrent)
-
-BitTorrent is a communication protocol for peer-to-peer file sharing (P2P) which is used to distribute data and electronic files over the Internet.
-
-- [x] torrent file processing
-- [ ] Tracker server
-- [ ] Tracker communication
-
 ## [Brainf\*\*k](branf)
 
 An esoteric programming language created in 1993 by Urban Müller, and is notable for its extreme minimalism.
 
 ## In progress
 
+## [BitTorrent](torrent)
+
+BitTorrent is a communication protocol for peer-to-peer file sharing (P2P) which is used to distribute data and electronic files over the Internet.
+
+- [x] Torrent file processing
+- [ ] Tracker server
+- [ ] Tracker communication
+- [ ] Downloader
+
 ### [png](png)
 
-## TODO
-
-- [ ] png
+- [x] Header parser
+- [x] Palette parser
+- [ ] Decompress data
+- [ ] Interlace support
+- [ ] Filter support
+- [ ] Dependencies
   - [ ] Deflate (used for png)
     - [ ] Huffman encoding (used for deflate)
   - [ ] CRC-32 (used for png)
+
+## TODO plan
+
 - [ ] sha1
 - [ ] sha256
 - [ ] md5
