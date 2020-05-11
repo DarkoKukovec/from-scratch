@@ -1,6 +1,7 @@
 const { decode } = require('.');
+const { parseBitsSting } = require('../helpers');
 
-const input = process.argv[2].split('').map((item) => item === '1');
+const input = parseBitsSting(process.argv[2]);
 const alphabet = process.argv[4] ? process.argv[4].split('') : null;
 
 let mapping = {};

@@ -1,4 +1,4 @@
-const MAX_BITS = 8; // TODO: Find the actual value
+const { stringifyBits, numberToBits } = require('../helpers');
 
 function getTreeValue(symbol) {
   const value = [];
@@ -13,38 +13,36 @@ function getTreeValue(symbol) {
 }
 
 function getNormalizedTree(mapping, alphabet) {
-  const keys = alphabet.slice().sort();
+  const maxBits = Math.max(...mapping);
   const hash = {};
 
   // Step 1 - Count the number of codes for each code length
-  const blCount = {};
+  const blCount = Array(maxBits + 1).fill(0);
   mapping.forEach((value) => {
-    blCount[value] = blCount[value] || 0;
-    blCount[value]++;
+    value && blCount[value]++;
   });
 
   // Step 2 - Find the numerical value of the smallest code for each code length
   let code = 0;
-  blCount[0] = 0;
-  const nextCode = {};
-  for (let bits = 1; bits <= MAX_BITS; bits++) {
-    code = (code + blCount[bits - 1]) << 1;
-    nextCode[bits] = code;
-  }
+  const nextCode = blCount.map((_, bits) => {
+    return (code = code + (blCount[bits - 1] || 0)) << 1;
+  });
 
   // Step 3 - Assign numerical values to all codes
-  for (let n = 0; n < keys.length; n++) {
-    const len = mapping[n];
-    if (len !== 0) {
-      hash[keys[n]] = Array(mapping[n])
-        .fill(0)
-        .map((_, index) => Boolean(nextCode[len] & (2 ** index)))
-        .reverse();
+  alphabet.forEach((key, index) => {
+    const len = mapping[index];
+    if (len) {
+      hash[key] = numberToBits(nextCode[len], len);
       nextCode[len]++;
     }
-  }
+  });
 
-  return { keys, hash };
+  const map = {};
+  Object.keys(hash).forEach((key) => {
+    map[stringifyBits(hash[key])] = key;
+  });
+
+  return { hash, map };
 }
 
 function encode(input, deflate) {
@@ -90,7 +88,7 @@ function encode(input, deflate) {
     const alphabet = Object.keys(mapping).sort();
     const res = getNormalizedTree(
       alphabet.map((key) => mapping[key].length),
-      alphabet,
+      alphabet.slice().sort(),
     );
     Object.assign(dictionary, res.hash);
   }
@@ -102,22 +100,18 @@ function encode(input, deflate) {
 
   return { output, mapping: deflate ? dictionary : mapping };
 }
+
 function decode(input, mapping, alphabet) {
-  let data = input.map((item) => (item ? 1 : 0)).join('');
+  let data = stringifyBits(input);
   const hash = {};
 
-  if (alphabet) {
-    const res = getNormalizedTree(mapping, alphabet);
-    res.keys.forEach((key) => {
-      hash[res.hash[key].map((item) => (item ? 1 : 0)).join('')] = key;
-    });
-  } else {
-    Object.keys(mapping).forEach((key) => {
-      hash[mapping[key].map((item) => (item ? 1 : 0)).join('')] = key;
-    });
-  }
+  const tree = alphabet ? getNormalizedTree(mapping, alphabet.slice().sort()).hash : mapping;
+  Object.keys(tree).forEach((key) => {
+    hash[stringifyBits(tree[key])] = key;
+  });
 
   const keys = Object.keys(hash);
+  console.log(keys.length, hash);
   const output = [];
   for (;;) {
     const next = keys.find((key) => data.startsWith(key));
@@ -131,4 +125,4 @@ function decode(input, mapping, alphabet) {
   return output.map((item) => hash[item]);
 }
 
-module.exports = { encode, decode };
+module.exports = { encode, decode, getHuffmanTree: getNormalizedTree };

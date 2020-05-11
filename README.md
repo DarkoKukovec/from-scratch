@@ -20,6 +20,10 @@ An esoteric programming language created in 1993 by Urban Müller, and is notabl
 
 In computer science and information theory, a Huffman code is a particular type of optimal prefix code that is commonly used for lossless data compression.
 
+## [deflate](deflate)
+
+In computing, Deflate is a lossless data compression file format that uses a combination of LZSS and Huffman coding.
+
 ## In progress
 
 ## [BitTorrent](torrent)
@@ -38,12 +42,13 @@ BitTorrent is a communication protocol for peer-to-peer file sharing (P2P) which
 - [x] File parser
   - [x] Extract chunks
   - [ ] Checksum (optional)
-    - [ ] CRC-32
 - [x] Header parser
 - [x] Palette parser
 - [ ] Decompress data
   - [ ] Deflate
     - [x] Huffman encoding
+    - [ ] LZSS
+    - [ ] Checksum (optional)
 - [ ] Interlace support
 - [ ] Filter support
 
@@ -53,3 +58,5 @@ BitTorrent is a communication protocol for peer-to-peer file sharing (P2P) which
 - [ ] sha256
 - [ ] md5
 - [ ] rsa
+- [ ] CRC-32 (png dependency)
+- [ ] ADLER32 (png dependency)
