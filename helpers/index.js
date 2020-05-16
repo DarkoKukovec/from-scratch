@@ -67,14 +67,14 @@ function byteToBit(byte) {
 }
 
 function byteArrayToBits(byteArray) {
-  return [].concat(...byteArray.map(byteToBit));
+  return byteArray.map(byteToBit).flat();
 }
 
-function bitsToByteArray(bits) {
+function bitsToByteArray(bits, byteSize = 8) {
   const bytes = [];
 
-  for (let pos = 0; pos < bits.length; pos += 8) {
-    bytes.push(bitsToNumber(bits.slice(pos, pos + 8)));
+  for (let pos = 0; pos < bits.length; pos += byteSize) {
+    bytes.push(bitsToNumber(bits.slice(pos, pos + byteSize)));
   }
 
   return bytes;

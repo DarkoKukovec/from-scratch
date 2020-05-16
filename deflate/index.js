@@ -3,7 +3,6 @@ const {
   byteArrayToBits,
   bitsToNumber,
   stringifyBits,
-  bitsToByteArray,
   byteToBit,
 } = require('../helpers');
 const { getHuffmanTree } = require('../huffman-code');
@@ -39,8 +38,10 @@ function decode(input) {
   const data = Array.from(input);
   const cmf = data.shift();
   const flg = data.shift();
-  const dictid = data.splice(0, 4);
-  const adler32 = data.splice(-4, 4);
+  const fdict = extractBits(flg, 5, 1);
+  data.splice(0, 4);
+  const dictid = fdict ? data.splice(0, 4) : null; // TODO: What?
+  const adler32 = data.splice(-4, 4); // TODO: Checksum
 
   const compressionInfo = extractBits(cmf, 4, 4);
   const compressionMethod = extractBits(cmf, 0, 4);
@@ -51,29 +52,29 @@ function decode(input) {
     throw new Error("Compression info size can't be bigger than 7 (by spec)");
   }
 
-  const windowSize = 2 ** (compressionInfo + 8);
+  const windowSize = 2 ** (compressionInfo + 8); // TODO: What?
 
   // const fcheck = extractBits(flg, 0, 5);
   if ((cmf * 256 + flg) % 31 !== 0) {
     throw new Error("Checksum doesn't match");
   }
 
-  const fdict = extractBits(flg, 5, 1);
-
   // Not needed for decompression
   const flevel = extractBits(flg, 6, 2);
 
-  if (fdict) {
-    // TODO: Extract the dictionary
-    // const dictId = data.shift();
+  console.log('init', dictid, windowSize, fdict, flevel, adler32, byteToBit(data[0]));
+
+  if (dictid) {
+    // TODO: Extract/generate the dictionary?
   }
 
   const inputBits = byteArrayToBits(data);
+  const inputSize = inputBits.length;
   let outputBits = [];
 
   let bfinal = false;
   while (!bfinal && inputBits.length) {
-    bfinal = inputBits.shift(); // || true; // TODO: debug
+    bfinal = inputBits.shift();
     const btype = bitsToNumber(inputBits.splice(0, 2));
 
     if (btype === 3) {
@@ -81,9 +82,14 @@ function decode(input) {
     }
 
     if (btype === 0) {
+      const skipBits = (((8 - inputSize + inputBits.length) % 8) + 8) % 8;
+      inputBits.splice(0, skipBits);
       const len = bitsToNumber(inputBits.splice(0, 16));
       const nlen = bitsToNumber(inputBits.splice(0, 16));
-      outputBits.push(...inputBits.splice(0, len));
+      // if (len !== ~nlen) {
+      //   throw new Error(`Lengths don't match ${len}, ${nlen}, ${~nlen}`);
+      // }
+      outputBits.push(...inputBits.splice(0, len * 8));
       continue;
     }
 
@@ -99,13 +105,12 @@ function decode(input) {
       hash = output.map;
     } else if (btype === 2) {
       const hlit = bitsToNumber(inputBits.splice(0, 5)) + 257;
-      const hdist = bitsToNumber(inputBits.splice(0, 5)) + 1;
-      const hclen = bitsToNumber(inputBits.splice(0, 4)) + 4 && 19;
+      const hdist = bitsToNumber(inputBits.splice(0, 5)) + 1; // TODO: What?
+      const hclen = bitsToNumber(inputBits.splice(0, 4)) + 4 && 19; // TODO: Why 0?
 
       const codes = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
       const codeLengths = [];
       const lengths = inputBits.splice(0, hclen * 3);
-      console.log(hlit, hdist);
       while (lengths.length) {
         codeLengths.push(bitsToNumber(lengths.splice(0, 3)));
       }
@@ -167,14 +172,13 @@ function decode(input) {
       const dc = Math.ceil(Math.max(0, dist - 3) / 2);
       distance = (dist - dc) * 2 ** dc + 1 + bitsToNumber(inputBits.splice(0, dc));
 
-      console.log('ls', dist, distance, code, length);
       for (let index = 0; index < length; index++) {
         outputBits.push(outputBits[outputBits.lengths - distance + index]);
       }
     }
   }
 
-  return bitsToByteArray(outputBits);
+  return outputBits;
 }
 
 module.exports = { encode, decode };

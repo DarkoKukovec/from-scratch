@@ -8,7 +8,6 @@ function pxToColor(px) {
 const file = process.argv[2];
 const data = fs.readFileSync(file);
 const output = parser(data);
-// console.log(output);
 fs.writeFileSync(
   'output.html',
   `<style type="text/css">i{display:inline-block;width:1px;height:1px}</style><div style="width:${

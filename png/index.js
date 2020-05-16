@@ -1,4 +1,4 @@
-const { byteArrayToNumber, byteArrayToString } = require('../helpers');
+const { byteArrayToNumber, byteArrayToString, bitsToByteArray } = require('../helpers');
 
 const { decode } = require('../deflate');
 
@@ -20,9 +20,6 @@ const cmds = {
     output.info.compressionMethod = byteArrayToNumber(data.splice(0, 1));
     output.info.filterMethod = byteArrayToNumber(data.splice(0, 1));
     output.info.interlaceMethod = byteArrayToNumber(data.splice(0, 1));
-    if (output.info.bitDepth !== 8) {
-      throw new Error('Only 8 bit pngs are supported');
-    }
     console.log(output.info);
   },
   PLTE(payload, output) {
@@ -53,54 +50,45 @@ const cmds = {
     }
   },
   IDAT(payload, output) {
-    const data = Array.from(payload);
-    const type = output.info.colorType;
+    console.log('idat size', payload.length * 8);
+
+    const decodedData = bitsToByteArray(decode(payload.slice(0)), output.info.bitDepth);
+    console.log('data', (payload.length * 8) / output.info.bitDepth, '->', decodedData.length);
+
+    let count = 3;
+    if (output.info.colorType === 3) {
+      count = 1;
+    } else if (output.info.colorType === 4) {
+      count = 2;
+    } else if (output.info.colorType === 6) {
+      count = 4;
+    }
+    console.log('expected', count * output.info.width * output.info.height);
+
     output.pixels = output.pixels || [];
-
-    // 1 byte compression type
-    // const compressionType = data.shift();
-    // if (compressionType !== 0) {
-    //   // throw new Error('Wrong compression type');
-    // }
-
-    // 1 byte additional flags
-    // const flag = data.shift();
-
-    // n bytes compressed data
-
-    // 4 bytes check value
-    const checkValue = data.splice(-4, 4);
-
-    const decodedData = decode(data);
-    console.log('data', data.length, '->', decodedData.length);
-    const map = {};
-    decodedData.map((val) => {
-      map[val] = map[val] || 0;
-      map[val]++;
-    });
-
     while (decodedData.length) {
-      if (type === 0) {
-        const color = byteArrayToNumber(decodedData.splice(0, 1));
+      if (output.info.colorType === 0) {
+        const color = decodedData.shift();
         output.pixels.push([color, color, color]);
-      } else if (type === 2) {
+      } else if (output.info.colorType === 2) {
+        output.pixels.push([decodedData.shift(), decodedData.shift(), decodedData.shift()]);
+      } else if (output.info.colorType === 3) {
+        const index = decodedData.shift();
+        if (output.palette[index]) {
+          output.pixels.push(output.palette[index]);
+        } else {
+          console.log('missing palette item', index);
+        }
+      } else if (output.info.colorType === 4) {
+        const color = decodedData.shift();
+        const alpha = decodedData.shift();
+        output.pixels.push([color, color, color, alpha]);
+      } else if (output.info.colorType === 6) {
         output.pixels.push([
-          byteArrayToNumber(decodedData.splice(0, 1)),
-          byteArrayToNumber(decodedData.splice(0, 1)),
-          byteArrayToNumber(decodedData.splice(0, 1)),
-        ]);
-      } else if (type === 3) {
-        const index = byteArrayToNumber(decodedData.splice(0, 1));
-        output.pixels.push(output.palette[index]);
-      } else if (type === 4) {
-        const color = byteArrayToNumber(decodedData.splice(0, 1));
-        output.pixels.push([color, color, color, byteArrayToNumber(decodedData.splice(0, 1))]);
-      } else if (type === 6) {
-        output.pixels.push([
-          byteArrayToNumber(decodedData.splice(0, 1)),
-          byteArrayToNumber(decodedData.splice(0, 1)),
-          byteArrayToNumber(decodedData.splice(0, 1)),
-          byteArrayToNumber(decodedData.splice(0, 1)),
+          decodedData.shift(),
+          decodedData.shift(),
+          decodedData.shift(),
+          decodedData.shift(),
         ]);
       }
     }
@@ -133,9 +121,15 @@ module.exports = function (image) {
   }
   output.chunks = chunks;
 
+  console.log(
+    'all chunks',
+    chunks.map(({ name }) => name),
+  );
+
   chunks
     .filter((chunk) => chunk.name in cmds)
     .map((chunk) => {
+      console.log('chunk', chunk.name);
       cmds[chunk.name](chunk.data, output);
     });
 
